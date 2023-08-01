@@ -6,7 +6,7 @@
 
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 image:
-  file: ..gitpod.Dockerfile
+  file: .gitpod.Dockerfile
 
 
 # List the start up tasks. You can start them in parallel in multiple terminals. See https://www.gitpod.io/docs/configure/workspaces/tasks/
