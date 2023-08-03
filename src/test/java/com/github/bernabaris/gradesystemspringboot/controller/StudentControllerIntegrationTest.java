@@ -2,76 +2,103 @@ package com.github.bernabaris.gradesystemspringboot.controller;
 
 import com.github.bernabaris.gradesystemspringboot.entity.Student;
 import com.github.bernabaris.gradesystemspringboot.service.StudentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
+import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.hamcrest.Matchers.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WebMvcTest(StudentController.class)
 public class StudentControllerIntegrationTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
 
     @MockBean
     private StudentService studentService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
-    public void testGetAllStudents() {
-        // Arrange
-        Student student1 = new Student(1L, "Taylor", null, null);
-        Student student2 = new Student(2L, "Lautner", null, null);
-        when(studentService.getAllStudents()).thenReturn(Arrays.asList(student1, student2));
+    public void getAllStudentsTest() throws Exception {
+        Student student = new Student();
+        student.setName("Taylor");
+        List<Student> students = Arrays.asList(student);
+        when(studentService.getAllStudents()).thenReturn(students);
 
-        // Act
-        ResponseEntity<Student[]> response = restTemplate.getForEntity("/api/students", Student[].class);
-
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().length).isEqualTo(2);
-        assertThat(response.getBody()[0].getName()).isEqualTo(student1.getName());
-        assertThat(response.getBody()[1].getName()).isEqualTo(student2.getName());
+        mockMvc.perform(get("/api/students")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name", is(student.getName())));
     }
 
     @Test
-    public void testGetStudentById() {
-        // Arrange
-        Long studentId = 1L;
-        Student student = new Student(studentId, "Taylor", null, null);
-        when(studentService.getStudentById(studentId)).thenReturn(student);
+    public void getStudentByIdTest() throws Exception {
+        Student student = new Student();
+        student.setName("Taylor");
+        when(studentService.getStudentById(any(Long.class))).thenReturn(student);
 
-        // Act
-        ResponseEntity<Student> response = restTemplate.getForEntity("/api/students/" + studentId, Student.class);
-
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getName()).isEqualTo(student.getName());
+        mockMvc.perform(get("/api/students/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(student.getName())));
     }
 
+    @Test
+    public void createStudentTest() throws Exception {
+        Student student = new Student();
+        student.setName("Taylor");
+        when(studentService.createStudent(any(Student.class))).thenReturn(student);
 
-
-
+        mockMvc.perform(post("/api/students")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(student)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(student.getName())));
+    }
 
     @Test
-    public void testGetAverageGradeForStudent() {
-        // Arrange
-        Long studentId = 1L;
-        double averageGrade = 88.5;
-        when(studentService.getAverageGradeForStudent(studentId)).thenReturn(averageGrade);
+    public void updateStudentTest() throws Exception {
+        Student student = new Student();
+        student.setName("Taylor Updated");
+        when(studentService.updateStudent(any(Long.class), any(Student.class))).thenReturn(student);
 
-        // Act
-        ResponseEntity<Double> response = restTemplate.getForEntity("/api/" + studentId + "/averageGrade", Double.class);
+        mockMvc.perform(put("/api/students/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(student)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(student.getName())));
+    }
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(averageGrade);
+    @Test
+    public void deleteStudentTest() throws Exception {
+        mockMvc.perform(delete("/api/students/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getAverageGradeForStudentTest() throws Exception {
+        Double averageGrade = 4.0;
+        when(studentService.getAverageGradeForStudent(any(Long.class))).thenReturn(averageGrade);
+
+        mockMvc.perform(get("/api/1/averageGrade")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", is(averageGrade)));
     }
 }

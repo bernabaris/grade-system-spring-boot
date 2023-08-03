@@ -3,6 +3,7 @@ package com.github.bernabaris.gradesystemspringboot.controller;
 import com.github.bernabaris.gradesystemspringboot.entity.Student;
 import com.github.bernabaris.gradesystemspringboot.service.StudentService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,11 +12,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class StudentController {
+
+    @Autowired
     private StudentService studentService;
 
-    public StudentController(StudentService studentService){
-        this.studentService=studentService;
-    }
+
+
 
     @GetMapping("/students")
     public ResponseEntity<List<Student>> getAllStudents() {
